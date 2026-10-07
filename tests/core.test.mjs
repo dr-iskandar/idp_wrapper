@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {normalizeName,normalizeCurrency,normalizeIdentifier,normalizeDate,validateCase,defaultSchemas,defaultRules,buildReviewQueue} from '../lib.mjs';
+test('name normalization',()=>assert.equal(normalizeName('Dicky   Rachmat Iskandar'),'DICKY RACHMAT ISKANDAR'));
+test('currency normalization',()=>assert.equal(normalizeCurrency('Rp 12.500.000'),'12500000'));
+test('identifier normalization',()=>assert.equal(normalizeIdentifier('12.345.678.9-012.000'),'123456789012000'));
+test('date normalization',()=>assert.equal(normalizeDate('07/10/2026'),'2026-10-07'));
+test('default schemas exist',()=>assert.ok(defaultSchemas().some(x=>x.id==='KTP')));
+test('default rules exist',()=>assert.ok(defaultRules().some(x=>x.id==='RULE-003')));
+test('mismatch detection',()=>{const f=(id,name,v)=>({id,fieldName:name,rawValue:v,normalizedValue:v,confidence:.99,needsReview:false,verificationStatus:'AI_EXTRACTED'});const c={id:'c',documents:[{id:'d1',documentType:'KTP',fields:[f('a','nik','111')]},{id:'d2',documentType:'LOAN_APPLICATION',fields:[f('b','nik','222')]}]};assert.ok(validateCase(c,()=>Math.random().toString()).some(x=>x.ruleId==='RULE-003'&&x.status==='MISMATCH'))});
+test('review queue prioritizes mismatch',()=>{const c={id:'c',caseNumber:'1',customerName:'A',caseType:'X',status:'NEEDS_REVIEW',updatedAt:new Date().toISOString(),documents:[],validations:[{status:'MISMATCH',severity:'HIGH'}]};assert.equal(buildReviewQueue([c])[0].priority,'HIGH')});
