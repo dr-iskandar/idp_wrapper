@@ -1,1 +1,87 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WKT Verify</title><link rel="stylesheet" href="/app.css"></head><body><aside><h2>WKT Verify</h2><small>AI Document Verification Wrapper</small><nav><a href="#/">Dashboard</a><a href="#/cases">Cases</a><a href="#/new">New Case</a><a href="#/queue">Review Queue</a><hr><a href="#/gateway">AI Gateway</a><a href="#/schemas">Schema Builder</a><a href="#/rules">Rule Builder</a></nav></aside><main><header><span>Enterprise AI orchestration & verification layer</span><span id="health">Checking…</span></header><section id="app"></section></main><script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PVS IDP — AI Document Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            pvs: {
+              ink: '#231F20',
+              blue: '#1464A4',
+              cyan: '#00ADEE',
+              pale: '#EAF6FC'
+            }
+          },
+          fontFamily: { sans: ['Manrope','ui-sans-serif','system-ui','sans-serif'] },
+          boxShadow: { soft: '0 12px 32px rgba(35,31,32,.07)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    html{background:#f7f9fc}
+    body{font-family:Manrope,ui-sans-serif,system-ui,sans-serif}
+    .pvs-check{background:linear-gradient(145deg,#00ADEE 0%,#1464A4 58%,#0f3d8a 100%)}
+    .thin-scroll::-webkit-scrollbar{width:7px;height:7px}.thin-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-pvs-ink">
+  <div class="min-h-screen lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+    <aside class="border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen">
+      <div class="flex h-full flex-col px-4 py-5">
+        <div class="flex items-center gap-3 px-2 pb-7">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-pvs-ink text-white shadow-soft">
+            <svg viewBox="0 0 36 36" class="h-7 w-7" fill="none" aria-hidden="true">
+              <path d="M6 18.5 14.1 28 30 5" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs><linearGradient id="g" x1="7" y1="28" x2="29" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#00ADEE"/><stop offset="1" stop-color="#1464A4"/></linearGradient></defs>
+            </svg>
+          </div>
+          <div>
+            <div class="text-2xl font-extrabold tracking-[-0.075em] text-pvs-ink">p<span class="text-pvs-blue">v</span>s</div>
+            <div class="text-[11px] font-semibold uppercase tracking-[.14em] text-slate-400">IDP Workspace</div>
+          </div>
+        </div>
+        <nav id="nav" class="space-y-1 text-sm font-semibold">
+          <a data-nav="home" href="#/" class="nav-link">Dashboard</a>
+          <a data-nav="cases" href="#/cases" class="nav-link">Cases</a>
+          <a data-nav="new" href="#/new" class="nav-link">New Case</a>
+          <a data-nav="queue" href="#/queue" class="nav-link">Review Queue</a>
+          <a data-nav="compare" href="#/compare" class="nav-link">Comparison Lab</a>
+          <div class="my-4 border-t border-slate-100"></div>
+          <a data-nav="gateway" href="#/gateway" class="nav-link">AI Gateway</a>
+          <a data-nav="schemas" href="#/schemas" class="nav-link">Schema Builder</a>
+          <a data-nav="rules" href="#/rules" class="nav-link">Rule Builder</a>
+        </nav>
+        <div class="mt-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-500">
+          <div class="font-bold text-pvs-ink">PVS Document Intelligence</div>
+          AI extracts · rules verify · humans decide
+        </div>
+      </div>
+    </aside>
+    <main class="min-w-0">
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur md:px-7">
+        <div>
+          <div class="text-sm font-bold text-pvs-ink">AI Document Intelligence Platform</div>
+          <div class="hidden text-xs text-slate-400 sm:block">Provider-agnostic extraction, verification & comparison</div>
+        </div>
+        <div id="health" class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500">Checking runtime…</div>
+      </header>
+      <section id="app" class="mx-auto max-w-[1500px] p-4 md:p-7"></section>
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll('.nav-link').forEach(a => {
+      a.className += ' flex items-center rounded-xl px-3 py-2.5 text-slate-600 transition hover:bg-slate-100 hover:text-pvs-ink';
+    });
+  </script>
+  <script src="/app.js"></script>
+</body>
+</html>
