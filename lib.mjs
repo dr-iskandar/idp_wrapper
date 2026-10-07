@@ -1,0 +1,48 @@
+export const DOCUMENT_TYPES = ['KTP','NPWP','BANK_STATEMENT','SALARY_SLIP','LOAN_APPLICATION','INVOICE','UNKNOWN'];
+
+export function normalizeName(v=''){return String(v).normalize('NFKD').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim().toUpperCase()}
+export function normalizeCurrency(v=''){return String(v).replace(/[^0-9]/g,'')}
+export function normalizeIdentifier(v=''){return String(v).replace(/[^A-Za-z0-9]/g,'').toUpperCase()}
+export function normalizeDate(v=''){const s=String(v).trim();const m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:s.toUpperCase()}
+export function normalizeField(name,value){const n=String(name).toLowerCase();if(n.includes('name')||n.includes('holder'))return normalizeName(value);if(n.includes('salary')||n.includes('balance')||n.includes('amount')||n.includes('allowance')||n.includes('deduction'))return normalizeCurrency(value);if(n.includes('date')||n.includes('period'))return normalizeDate(value);if(n.includes('nik')||n.includes('npwp')||n.includes('number')||n.includes('account'))return normalizeIdentifier(value);return String(value??'').trim().replace(/\s+/g,' ').toUpperCase()}
+
+const schema=(id,label,fields)=>({id,label,enabled:true,fields:fields.map(([name,label,type='string',required=false])=>({id:`sf_${id}_${name}`,name,label,type,required}))});
+export function defaultSchemas(){return [
+ schema('KTP','KTP / Identity Card',[['nik','NIK','identifier',true],['name','Full Name','name',true],['birth_place','Birth Place'],['birth_date','Birth Date','date'],['gender','Gender'],['address','Address']]),
+ schema('NPWP','NPWP / Tax ID',[['npwp','NPWP Number','identifier',true],['name','Taxpayer Name','name',true],['address','Address']]),
+ schema('SALARY_SLIP','Salary Slip',[['employee_name','Employee Name','name',true],['company_name','Company Name'],['period','Period','date'],['basic_salary','Basic Salary','currency'],['allowances','Allowances','currency'],['deductions','Deductions','currency'],['net_salary','Net Salary','currency',true]]),
+ schema('BANK_STATEMENT','Bank Statement',[['account_holder','Account Holder','name',true],['account_number','Account Number','identifier'],['period','Period','date'],['opening_balance','Opening Balance','currency'],['closing_balance','Closing Balance','currency']]),
+ schema('LOAN_APPLICATION','Loan Application',[['applicant_name','Applicant Name','name',true],['nik','NIK','identifier',true],['npwp','NPWP','identifier'],['requested_amount','Requested Amount','currency'],['application_date','Application Date','date']]),
+ schema('INVOICE','Invoice',[['invoice_number','Invoice Number','identifier',true],['invoice_date','Invoice Date','date'],['vendor_name','Vendor Name','name'],['customer_name','Customer Name','name'],['amount','Amount','currency',true]])
+]}
+export function defaultRules(){return [
+ {id:'RULE-001',name:'KTP name vs NPWP name',type:'compare',sourceDoc:'KTP',sourceFields:['name'],targetDoc:'NPWP',targetFields:['name'],label:'Customer Name',severity:'HIGH',enabled:true},
+ {id:'RULE-002',name:'KTP name vs Loan Application',type:'compare',sourceDoc:'KTP',sourceFields:['name'],targetDoc:'LOAN_APPLICATION',targetFields:['applicant_name'],label:'Customer Name',severity:'HIGH',enabled:true},
+ {id:'RULE-003',name:'KTP NIK vs Loan Application',type:'compare',sourceDoc:'KTP',sourceFields:['nik'],targetDoc:'LOAN_APPLICATION',targetFields:['nik'],label:'NIK',severity:'CRITICAL',enabled:true},
+ {id:'RULE-004',name:'Salary employee vs KTP',type:'compare',sourceDoc:'SALARY_SLIP',sourceFields:['employee_name'],targetDoc:'KTP',targetFields:['name'],label:'Employee Name',severity:'HIGH',enabled:true},
+ {id:'RULE-005',name:'Bank holder vs KTP',type:'compare',sourceDoc:'BANK_STATEMENT',sourceFields:['account_holder'],targetDoc:'KTP',targetFields:['name'],label:'Account Holder',severity:'HIGH',enabled:true},
+ {id:'RULE-006',name:'KTP NIK required',type:'required',sourceDoc:'KTP',sourceFields:['nik'],label:'KTP NIK',severity:'CRITICAL',enabled:true},
+ {id:'RULE-007',name:'NPWP number required',type:'required',sourceDoc:'NPWP',sourceFields:['npwp'],label:'NPWP Number',severity:'HIGH',enabled:true}
+]}
+export function defaultSettings(){const routing={};for(const t of DOCUMENT_TYPES)routing[t]={provider:'openai',model:'gpt-6-luna'};return {providers:{
+ openai:{id:'openai',name:'OpenAI',kind:'openai_responses',enabled:true,baseUrl:'https://api.openai.com/v1',model:'gpt-6-luna',models:['gpt-6-luna']},
+ gemini:{id:'gemini',name:'Google Gemini',kind:'openai_compatible',enabled:true,baseUrl:'https://generativelanguage.googleapis.com/v1beta/openai',model:'gemini-3-flash-preview',models:['gemini-3-flash-preview']},
+ qwen:{id:'qwen',name:'Alibaba Qwen',kind:'openai_compatible',enabled:true,baseUrl:'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',model:'qwen-vl-max',models:['qwen-vl-max','qwen-plus']},
+ kimi:{id:'kimi',name:'Kimi / Moonshot',kind:'openai_compatible',enabled:true,baseUrl:'https://api.moonshot.ai/v1',model:'kimi-k2.5',models:['kimi-k2.5']},
+ deepseek:{id:'deepseek',name:'DeepSeek',kind:'openai_compatible',enabled:true,baseUrl:'https://api.deepseek.com',model:'deepseek-chat',models:['deepseek-chat']},
+ ollama:{id:'ollama',name:'Ollama Local',kind:'ollama',enabled:true,baseUrl:'http://localhost:11434',model:'',models:[]},
+ custom:{id:'custom',name:'Custom OpenAI-compatible',kind:'openai_compatible',enabled:false,baseUrl:'',model:'',models:[]}},routing,fallback:{enabled:false,provider:'openai',model:'gpt-6-luna'},thresholds:{needsReview:.75,highConfidence:.9}}}
+
+function field(doc,names){return doc?.fields?.find(f=>names.includes(f.fieldName))}
+function value(f){return f?(f.verifiedValue||f.normalizedValue||''):''}
+export function validateCase(c,idFn=()=>crypto.randomUUID(),rules=defaultRules()){
+ const docs={};for(const d of c.documents||[])if(!docs[d.documentType])docs[d.documentType]=d;const out=[];
+ for(const r of rules.filter(x=>x.enabled!==false)){
+  if(r.type==='compare'){const a=docs[r.sourceDoc],b=docs[r.targetDoc];if(!a&&!b)continue;const fa=field(a,r.sourceFields||[]),fb=field(b,r.targetFields||[]);let status='MATCH',message='Values match';if(!a||!b||!fa||!fb||!value(fa)||!value(fb)){status='MISSING';message='Required comparison value or document is missing'}else if(fa.confidence<.75||fb.confidence<.75||fa.needsReview||fb.needsReview){status='LOW_CONFIDENCE';message='One or more values need human review'}else if(value(fa)!==value(fb)){status='MISMATCH';message='Values differ across documents'}out.push({id:idFn('val'),caseId:c.id,ruleId:r.id,ruleName:r.name,severity:r.severity||'MEDIUM',fieldName:r.label||r.name,sourceDocument:a?.documentType||'MISSING',targetDocument:b?.documentType||'MISSING',sourceValue:fa?.rawValue||'—',targetValue:fb?.rawValue||'—',sourceFieldId:fa?.id||null,targetFieldId:fb?.id||null,status,message});
+  } else if(r.type==='required'){const a=docs[r.sourceDoc],fa=field(a,r.sourceFields||[]);let status='MATCH',message='Required value is present';if(!a||!fa||!value(fa)){status='MISSING';message='Required field is missing'}else if(fa.confidence<.75||fa.needsReview){status='LOW_CONFIDENCE';message='Required field has low confidence'}out.push({id:idFn('val'),caseId:c.id,ruleId:r.id,ruleName:r.name,severity:r.severity||'MEDIUM',fieldName:r.label||r.name,sourceDocument:a?.documentType||'MISSING',targetDocument:'Required Field',sourceValue:fa?.rawValue||'—',targetValue:'Required',sourceFieldId:fa?.id||null,targetFieldId:null,status,message});}
+ }
+ return out;
+}
+export function deriveStatus(c){if(['APPROVED','REJECTED'].includes(c.status))return c.status;if((c.documents||[]).some(d=>d.processingStatus==='PROCESSING'))return 'PROCESSING';if((c.validations||[]).some(v=>v.status!=='MATCH')||(c.documents||[]).some(d=>(d.fields||[]).some(f=>f.needsReview&&!['VERIFIED','CORRECTED'].includes(f.verificationStatus))))return 'NEEDS_REVIEW';return (c.documents||[]).length?'READY_FOR_REVIEW':'NEW'}
+export function buildReviewQueue(cases=[]){const rank={HIGH:3,MEDIUM:2,LOW:1};return cases.filter(c=>c.status==='NEEDS_REVIEW').map(c=>{const v=c.validations||[],m=v.filter(x=>x.status==='MISMATCH').length,missing=v.filter(x=>x.status==='MISSING').length,low=v.filter(x=>x.status==='LOW_CONFIDENCE').length,lowFields=(c.documents||[]).flatMap(d=>(d.fields||[]).filter(f=>f.needsReview).map(f=>({documentId:d.id,documentType:d.documentType,fieldId:f.id,fieldName:f.fieldName,value:f.rawValue,confidence:f.confidence})));const priority=(v.some(x=>x.severity==='CRITICAL'&&x.status!=='MATCH')||m)?'HIGH':missing?'MEDIUM':'LOW';return {caseId:c.id,caseNumber:c.caseNumber,customerName:c.customerName,caseType:c.caseType,status:c.status,priority,mismatch:m,missing,lowConfidence:low+lowFields.length,issues:m+missing+low+lowFields.length,updatedAt:c.updatedAt,lowFields}}).sort((a,b)=>rank[b.priority]-rank[a.priority]||new Date(b.updatedAt)-new Date(a.updatedAt))}
+export function ensureDefaults(db){db.settings={...defaultSettings(),...(db.settings||{}),providers:{...defaultSettings().providers,...(db.settings?.providers||{})},routing:{...defaultSettings().routing,...(db.settings?.routing||{})}};db.schemas=Array.isArray(db.schemas)&&db.schemas.length?db.schemas:defaultSchemas();db.rules=Array.isArray(db.rules)&&db.rules.length?db.rules:defaultRules();db.cases=Array.isArray(db.cases)?db.cases:[];return db}
