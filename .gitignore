@@ -1,0 +1,21 @@
+.env
+.env.local
+.env.*.local
+
+# Runtime database and secrets
+data/*.sqlite
+data/*.sqlite-*
+data/.master.key
+
+# Runtime uploads
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
