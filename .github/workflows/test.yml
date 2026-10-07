@@ -15,3 +15,13 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
+      - name: Smoke test runtime
+        run: |
+          node server.mjs > /tmp/pvs-idp.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          for i in {1..20}; do curl -fsS http://127.0.0.1:3000/api/health && break || sleep 0.5; done
+          curl -fsS http://127.0.0.1:3000/api/health | grep '"ok":true'
+          curl -fsS http://127.0.0.1:3000/api/reference-fields
+          curl -fsS -X POST http://127.0.0.1:3000/api/reference-fields -H 'Content-Type: application/json' -d '{"name":"customer_name","label":"Customer Name","type":"name","value":"Demo Customer"}' | grep 'customer_name'
+          curl -fsS http://127.0.0.1:3000/api/reference-fields | grep 'Demo Customer'
