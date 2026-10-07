@@ -1,10 +1,10 @@
-# WKT Verify — AI Document Verification Wrapper
+# PVS IDP — AI Document Verification Wrapper
 
 WKT Verify adalah **model-agnostic AI document verification layer** untuk banking dan enterprise workflow. Produk ini bukan sekadar OCR: AI dipakai untuk memahami dan mengekstrak dokumen, sementara normalisasi, rule validation, cross-document comparison, human review, provenance, audit, dan verified output dikontrol oleh WKT Verify.
 
 ## Fitur utama
 
-- Multi-provider **AI Gateway** dengan provider dropdown + model dropdown.
+- UI baru berbasis **Tailwind CSS + Manrope** dengan identitas visual PVS (white / charcoal / blue-cyan).\n- **Comparison Lab**: custom reference field + value → Table Viewer → compare dengan file upload.\n- **File A vs File B**: extract dua dokumen lalu tampilkan similarity percentage per field + overall similarity.\n- Similarity dihitung oleh engine deterministik setelah extraction: fuzzy text/name, normalized identifier/date, dan relative numeric/currency comparison.\n- Multi-provider **AI Gateway** dengan provider dropdown + model dropdown + custom model ID.
 - BYOK (Bring Your Own Key) untuk OpenAI, Google Gemini, Alibaba Qwen, Kimi/Moonshot, DeepSeek, serta endpoint OpenAI-compatible lain.
 - **Ollama Local** untuk menjalankan model lokal/on-premise tanpa mengirim dokumen ke cloud.
 - Routing provider + model per document type: KTP, NPWP, Bank Statement, Salary Slip, Loan Application, Invoice, dan Unknown.
